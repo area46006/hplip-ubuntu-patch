@@ -1,15 +1,15 @@
 # HPLIP 3.26.6 Compatibility Patch for Modern Ubuntu & Linux
 
-A patch and automated installer for **HP Linux Imaging and Printing (HPLIP) 3.26.6** on modern Linux systems, specifically tested on **Ubuntu 26.04 ("Resolute")**, **Ubuntu 24.04/25.10**, and modern Debian distributions running **GCC 15+** and **Python 3.14+**.
+A complete patch, automated installer, and dependency manager for **HP Linux Imaging and Printing (HPLIP) 3.26.6** on modern Linux systems. Tested and verified on **Ubuntu 26.04 ("Resolute")**, **Ubuntu 24.04 LTS / 25.10**, and modern Debian distributions running **GCC 15+** and **Python 3.14+**.
 
 ---
 
 ## Background & Issues Resolved
 
-Official HPLIP 3.26.6 fails to build or run on modern Linux systems due to several compiler and standard library updates:
+Official HPLIP 3.26.6 fails to build or run out of the box on modern Linux systems due to compiler and standard library updates:
 
-1. **GCC 15 & C23 Standard Enforcement**:
-   - In C23 (the default in GCC 15), empty parameter lists `foo()` mean `foo(void)` instead of accepting unverified arguments. This breaks functions like `bb_is_paper_in_adf()`.
+1. **GCC 15 & C23 Standard Compliance**:
+   - In C23 (default in GCC 15), empty parameter lists `foo()` mean `foo(void)` instead of accepting unverified arguments. This breaks functions like `bb_is_paper_in_adf()`.
    - Strict `-Wreturn-mismatch` rejects returning values in `void` functions (such as `orblite_close()`).
    - Missing headers (`<dlfcn.h>`, `<unistd.h>`) cause fatal implicit function declaration errors (`dlclose`, `usleep`).
    - Missing prototypes for CUPS printer functions (`addCupsPrinter`, `delCupsPrinter`, `setDefaultCupsPrinter`, `controlCupsPrinter`).
@@ -18,13 +18,28 @@ Official HPLIP 3.26.6 fails to build or run on modern Linux systems due to sever
 2. **Python 2 Legacy C Extension (`pcardext`)**:
    - `pcard/pcardext/pcardext.c` uses long-removed Python 2 APIs (`PyString_*`, `Py_InitModule4`), causing compilation failures under Python 3. This obsolete module is cleanly decoupled from build targets.
 
-3. **Python 3.14 Breaking Change**:
+3. **Python 3.14 Breaking Change (`URLopener` Removal)**:
    - Python 3.14 completely removed `urllib.request.URLopener` (deprecated since Python 3.3).
    - HPLIP subclassed `URLopener` for its custom HTTP/EWS/LEDM handlers in `base/device.py`, causing `AttributeError: module 'urllib.request' has no attribute 'URLopener'` when running `hp-check` or `hp-toolbox`.
-   - Python 3.14 syntax warnings (e.g. `return` in `finally` blocks) have been cleaned up.
+   - Python 3.14 syntax warnings (e.g. `return` in `finally` blocks) have been cleaned up in `prnt/cups.py` and `ui5/faxsetupdialog.py`.
 
 4. **Data Directory Permission Fix**:
    - `sudo make install` on systems with strict root umasks creates `/usr/share/hplip/data` with mode `750`, preventing non-root users from accessing icons and printer images (`error: Pixmap 'hp-tux-printer.png' not found!`).
+
+---
+
+## Dependencies Managed
+
+The included `install.sh` automatically checks and installs all required and recommended packages across 5 subsystems:
+
+- **Build Toolchain**: `build-essential`, `gcc`, `g++`, `make`, `libtool`, `libtool-bin`, `automake`, `autoconf`, `pkg-config`, `patch`, `wget`
+- **Printing Subsystem (CUPS)**: `cups`, `cups-bsd`, `cups-client`, `cups-filters`, `libcups2-dev`, `libcupsimage2-dev`
+- **Scanning Subsystem (SANE)**: `sane`, `sane-utils`, `libsane-dev`, `xsane`
+- **Hardware, Bus & Security**: `libusb-1.0-0-dev`, `libsnmp-dev`, `libssl-dev`, `libavahi-client-dev`, `libavahi-common-dev`, `libavahi-core-dev`, `avahi-utils`, `avahi-daemon`, `dbus`, `libdbus-1-dev`, `polkitd`, `libjpeg-dev`, `ghostscript`
+- **Python 3 & PyQt5 GUI**: `python3`, `python3-dev`, `python3-pyqt5`, `python3-dbus`, `python3-dbus.mainloop.pyqt5`, `python3-gi`, `python3-lxml`, `python3-pil`, `python3-reportlab`, `python3-notify2`
+- **OCR & Document Processing**: `tesseract-ocr`, `qpdf`
+
+It also ensures CUPS is running and adds the user to the `lp` and `lpadmin` groups for printer and USB device access.
 
 ---
 
@@ -39,35 +54,33 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The script will:
-1. Verify and install any missing build dependencies via `apt-get`.
-2. Locate existing `hplip-3.26.6.run` or download it from SourceForge.
-3. Extract the archive without running the flawed installer script.
-4. Apply the unified patch.
-5. Build, install, and adjust system permissions.
+The script handles the full lifecycle: dependency installation, downloading/extracting official `hplip-3.26.6.run`, applying the patch, compiling with all CPU cores, installing, and configuring system permissions.
 
 ---
 
 ## Manual Installation
 
-If you prefer to apply the patch manually to an existing HPLIP 3.26.6 source tree:
+If you prefer to compile manually:
 
-### 1. Install Build Dependencies
+### 1. Install All Dependencies
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-    gcc g++ make libtool automake autoconf pkg-config \
-    libcups2-dev libcupsimage2-dev libusb-1.0-0-dev \
-    libsane-dev libsnmp-dev libssl-dev \
-    libavahi-client-dev libavahi-common-dev libdbus-1-dev \
-    python3-dev python3-pyqt5 python3-dbus python3-pil python3-reportlab
+    build-essential gcc g++ make libtool libtool-bin automake autoconf pkg-config patch wget \
+    cups cups-bsd cups-client cups-filters libcups2-dev libcupsimage2-dev \
+    sane sane-utils libsane-dev xsane \
+    libusb-1.0-0-dev libsnmp-dev libssl-dev libavahi-client-dev libavahi-common-dev \
+    avahi-utils avahi-daemon dbus libdbus-1-dev polkitd libjpeg-dev ghostscript \
+    python3 python3-dev python3-pyqt5 python3-dbus python3-dbus.mainloop.pyqt5 \
+    python3-gi python3-lxml python3-pil python3-reportlab python3-notify2 \
+    tesseract-ocr qpdf
 ```
 
 ### 2. Extract and Patch
 
 ```bash
-# Extract without executing
+# Extract without running the broken installer
 sh hplip-3.26.6.run --noexec --target hplip-3.26.6
 cd hplip-3.26.6
 
@@ -109,7 +122,7 @@ sudo ldconfig
    ```bash
    hp-toolbox
    ```
-   *Note for Wayland users:* If you see repeated warnings (`Wayland does not support QWindow::requestActivate()`), run through XWayland:
+   *Note for Wayland users:* If you see repeated `Wayland does not support QWindow::requestActivate()` messages, run through XWayland:
    ```bash
    QT_QPA_PLATFORM=xcb hp-toolbox
    ```
