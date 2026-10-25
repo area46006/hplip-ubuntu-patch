@@ -1,0 +1,7 @@
+# Build and extraction artifacts
+hplip-*.run
+hplip-*/
+*.bak.*
+*.tar.gz
+*.log
+__pycache__/
