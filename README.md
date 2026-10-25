@@ -8,6 +8,19 @@ A complete patch, automated installer, and dependency manager for **HP Linux Ima
 
 ---
 
+## Upstream Project & Official Channels
+
+This repository is maintained to assist Linux users until these modern toolchain fixes are integrated into an official upstream release by HP:
+
+- **Official HP Developer Portal**: [developers.hp.com/hp-linux-imaging-and-printing](https://developers.hp.com/hp-linux-imaging-and-printing)
+- **Official SourceForge Repository**: [sourceforge.net/projects/hplip](https://sourceforge.net/projects/hplip/)
+- **Official Upstream Bug Tracker (Launchpad)**: [bugs.launchpad.net/hplip](https://bugs.launchpad.net/hplip)
+
+### Upstream Contribution Notice
+HP tracks community bugs, hardware support questions, and patch contributions on their official [Launchpad bug tracker](https://bugs.launchpad.net/hplip). The unified patch provided here (`hplip-3.26.6-ubuntu-26.04.patch`) is formatted as a standard patch that can be submitted to HP's Launchpad maintainers so future HPLIP releases incorporate native support for GCC 15 and Python 3.14.
+
+---
+
 ## Legal & Compliance Notice
 
 - **Open Source Patch Model**: This repository distributes **only** unified source code patches and open-source installer automation under the GNU General Public License v2 (GPL-2.0).
@@ -16,15 +29,22 @@ A complete patch, automated installer, and dependency manager for **HP Linux Ima
 
 ---
 
-## Snap & Flatpak Compatibility
+## Application & Package Compatibility (APT, Snap & Flatpak)
 
-- **Printing from Sandboxed Apps (Firefox, LibreOffice, GIMP, etc.)**:
-  - **Flatpak Applications**: Flatpak apps communicate with the host printing system via the **XDG Desktop Portal** (`org.freedesktop.portal.Print`). Because this patch registers HPLIP directly with the host CUPS daemon, all Flatpak applications discover and print to your HP printer seamlessly.
-  - **Snap Applications**: Snapped applications print via the standard `cups` / `cups-control` interface connected to `/var/run/cups/cups.sock`. They have full access to all printers configured by this driver.
-- **Why HPLIP Itself is Built on the Host**:
-  - HPLIP is a system driver subsystem: it installs CUPS backends (`/usr/lib/cups/backend`), raster filters, SANE scanner backends (`/usr/lib/sane`), and kernel `udev` rules (`/etc/udev/rules.d/56-hpmud.rules`) that require raw access to `/dev/bus/usb/*`.
-  - Sandboxed formats like Flatpak isolate apps from kernel device nodes and system driver trees by design.
-  - On immutable systems (such as Ubuntu Core) where native driver installation is prohibited, OpenPrinting maintains the containerized `hplip-printer-app` Snap. For standard desktop distributions, installing this host-level driver provides universal compatibility across all host, Snap, and Flatpak client applications.
+This project installs HPLIP as a native host driver while ensuring full interoperability across all packaging formats:
+
+1. **Native APT & System Applications (Default)**:
+   - The driver is compiled and installed directly into standard system locations (`/usr/bin`, `/usr/lib/cups`, `/usr/lib/sane`, `/usr/share/hplip`).
+   - All native applications installed via `apt` or `.deb` (such as native LibreOffice, Evince, GIMP, Document Viewer, Simple Scan, and the CUPS web interface at `http://localhost:631`) communicate directly with HPLIP through native CUPS and SANE.
+
+2. **Sandboxed Applications (Snap & Flatpak)**:
+   - On modern Ubuntu releases, several default desktop applications are distributed as Snaps or Flatpaks (e.g. Snap Firefox, Flatpak LibreOffice).
+   - **Flatpak Applications**: Flatpak apps print by delegating print jobs to the host through the standard **XDG Desktop Portal** (`org.freedesktop.portal.Print`). Because this driver registers with the host CUPS daemon, all Flatpak apps print seamlessly through the desktop print dialog.
+   - **Snap Applications**: Snapped applications print via the standard `cups` / `cups-control` interface (`/var/run/cups/cups.sock`). They automatically recognize and print to all queues managed by HPLIP.
+
+3. **Why HPLIP Itself is Built as a Native Host Driver**:
+   - Hardware drivers require deep system integration: CUPS backend filters, SANE scanner shared libraries, and low-level kernel `udev` rules (`/etc/udev/rules.d/56-hpmud.rules`) that need raw access to USB hardware bus nodes (`/dev/bus/usb/*`).
+   - Sandboxed application containers (like Flatpak) isolate software from the host driver tree by design. Installing this driver on the host provides universal, zero-configuration printing for **both** native APT applications and sandboxed Snap/Flatpak applications.
 
 ---
 
@@ -54,7 +74,7 @@ Official HPLIP 3.26.6 fails to build or run out of the box on modern Linux syste
 
 ## Dependencies Managed
 
-The included `install.sh` automatically checks and installs all required and recommended packages across 6 subsystems:
+The included `install.sh` automatically checks and installs all required and recommended packages across 6 subsystems using `apt-get`:
 
 - **Build Toolchain**: `build-essential`, `gcc`, `g++`, `make`, `libtool`, `libtool-bin`, `automake`, `autoconf`, `pkg-config`, `patch`, `wget`
 - **Printing Subsystem (CUPS)**: `cups`, `cups-bsd`, `cups-client`, `cups-filters`, `libcups2-dev`, `libcupsimage2-dev`
