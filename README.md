@@ -16,6 +16,18 @@ A complete patch, automated installer, and dependency manager for **HP Linux Ima
 
 ---
 
+## Snap & Flatpak Compatibility
+
+- **Printing from Sandboxed Apps (Firefox, LibreOffice, GIMP, etc.)**:
+  - **Flatpak Applications**: Flatpak apps communicate with the host printing system via the **XDG Desktop Portal** (`org.freedesktop.portal.Print`). Because this patch registers HPLIP directly with the host CUPS daemon, all Flatpak applications discover and print to your HP printer seamlessly.
+  - **Snap Applications**: Snapped applications print via the standard `cups` / `cups-control` interface connected to `/var/run/cups/cups.sock`. They have full access to all printers configured by this driver.
+- **Why HPLIP Itself is Built on the Host**:
+  - HPLIP is a system driver subsystem: it installs CUPS backends (`/usr/lib/cups/backend`), raster filters, SANE scanner backends (`/usr/lib/sane`), and kernel `udev` rules (`/etc/udev/rules.d/56-hpmud.rules`) that require raw access to `/dev/bus/usb/*`.
+  - Sandboxed formats like Flatpak isolate apps from kernel device nodes and system driver trees by design.
+  - On immutable systems (such as Ubuntu Core) where native driver installation is prohibited, OpenPrinting maintains the containerized `hplip-printer-app` Snap. For standard desktop distributions, installing this host-level driver provides universal compatibility across all host, Snap, and Flatpak client applications.
+
+---
+
 ## Issues Resolved
 
 Official HPLIP 3.26.6 fails to build or run out of the box on modern Linux systems due to compiler and standard library updates:
