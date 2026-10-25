@@ -1,10 +1,22 @@
 # HPLIP 3.26.6 Compatibility Patch for Modern Ubuntu & Linux
 
+[![Patch Integrity & Lint](https://github.com/area46006/hplip-ubuntu-patch/actions/workflows/ci.yml/badge.svg)](https://github.com/area46006/hplip-ubuntu-patch/actions/workflows/ci.yml)
+[![License: GPL-2.0](https://img.shields.io/badge/License-GPL_2.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Ubuntu%2024.04%20%7C%2025.10%20%7C%2026.04-orange.svg)](#)
+
 A complete patch, automated installer, and dependency manager for **HP Linux Imaging and Printing (HPLIP) 3.26.6** on modern Linux systems. Tested and verified on **Ubuntu 26.04 ("Resolute")**, **Ubuntu 24.04 LTS / 25.10**, and modern Debian distributions running **GCC 15+** and **Python 3.14+**.
 
 ---
 
-## Background & Issues Resolved
+## Legal & Compliance Notice
+
+- **Open Source Patch Model**: This repository distributes **only** unified source code patches and open-source installer automation under the GNU General Public License v2 (GPL-2.0).
+- **No Proprietary Binary Redistribution**: This repository does **NOT** host or redistribute HP proprietary binary firmware or closed-source driver plugins (such as `libImageProcessor.so`). The installer downloads the official upstream archive directly from HP / SourceForge onto the user's local machine, fully adhering to HP's distribution terms and open-source licensing guidelines.
+- **Trademark Disclaimer**: HP, HPLIP, and Hewlett-Packard are registered trademarks of HP Inc. This is an independent open-source community maintenance project and is not affiliated with, endorsed by, or sponsored by HP Inc.
+
+---
+
+## Issues Resolved
 
 Official HPLIP 3.26.6 fails to build or run out of the box on modern Linux systems due to compiler and standard library updates:
 
@@ -30,7 +42,7 @@ Official HPLIP 3.26.6 fails to build or run out of the box on modern Linux syste
 
 ## Dependencies Managed
 
-The included `install.sh` automatically checks and installs all required and recommended packages across 5 subsystems:
+The included `install.sh` automatically checks and installs all required and recommended packages across 6 subsystems:
 
 - **Build Toolchain**: `build-essential`, `gcc`, `g++`, `make`, `libtool`, `libtool-bin`, `automake`, `autoconf`, `pkg-config`, `patch`, `wget`
 - **Printing Subsystem (CUPS)**: `cups`, `cups-bsd`, `cups-client`, `cups-filters`, `libcups2-dev`, `libcupsimage2-dev`
@@ -39,7 +51,7 @@ The included `install.sh` automatically checks and installs all required and rec
 - **Python 3 & PyQt5 GUI**: `python3`, `python3-dev`, `python3-pyqt5`, `python3-dbus`, `python3-dbus.mainloop.pyqt5`, `python3-gi`, `python3-lxml`, `python3-pil`, `python3-reportlab`, `python3-notify2`
 - **OCR & Document Processing**: `tesseract-ocr`, `qpdf`
 
-It also ensures CUPS is running and adds the user to the `lp` and `lpadmin` groups for printer and USB device access.
+It also ensures the CUPS daemon is active, reloads HP `udev` rules, and adds the current user to the `lp` and `lpadmin` groups.
 
 ---
 
@@ -48,7 +60,7 @@ It also ensures CUPS is running and adds the user to the `lp` and `lpadmin` grou
 Clone this repository and run the installer script:
 
 ```bash
-git clone https://github.com/<your-username>/hplip-ubuntu-patch.git
+git clone https://github.com/area46006/hplip-ubuntu-patch.git
 cd hplip-ubuntu-patch
 chmod +x install.sh
 ./install.sh
@@ -62,7 +74,7 @@ The script handles the full lifecycle: dependency installation, downloading/extr
 
 If you prefer to compile manually:
 
-### 1. Install All Dependencies
+### 1. Install Dependencies
 
 ```bash
 sudo apt-get update
@@ -80,7 +92,7 @@ sudo apt-get install -y \
 ### 2. Extract and Patch
 
 ```bash
-# Extract without running the broken installer
+# Extract without running the broken upstream installer
 sh hplip-3.26.6.run --noexec --target hplip-3.26.6
 cd hplip-3.26.6
 
@@ -139,6 +151,13 @@ sudo ldconfig
 
 ---
 
+## Contributing & Security
+
+- Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- To report security issues, refer to [SECURITY.md](SECURITY.md).
+
+---
+
 ## License
 
-The patches and installer scripts in this repository are distributed under the [GNU General Public License v2 or later](LICENSE), matching the upstream HPLIP open-source license.
+This project is licensed under the [GNU General Public License v2.0](LICENSE).

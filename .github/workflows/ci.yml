@@ -1,0 +1,28 @@
+name: Patch Integrity & Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate bash script syntax
+        run: |
+          bash -n install.sh
+
+      - name: Download upstream HPLIP 3.26.6 archive
+        run: |
+          wget --progress=dot:giga -O hplip-3.26.6.run https://downloads.sourceforge.net/project/hplip/hplip/3.26.6/hplip-3.26.6.run
+          sh hplip-3.26.6.run --noexec --target hplip-3.26.6
+
+      - name: Test dry-run patch application
+        run: |
+          cd hplip-3.26.6
+          patch -p1 --dry-run < ../hplip-3.26.6-ubuntu-26.04.patch
